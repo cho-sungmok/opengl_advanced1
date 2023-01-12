@@ -155,6 +155,9 @@ void Context::Render()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_FALSE);// depth buffer의 업데이트 막기 default true
+	//glClearDepth(1.0f);// depth buffer의 초기값 설정하기 0이 가장 가깝고 1이 가장 멀다. default 1.0f
+	//glDepthFunc(GL_LESS); default GL_LESS
 
 	m_cameraFront = 
 		glm::rotate(glm::mat4(1.0f), glm::radians(m_cameraYaw), glm::vec3(0.0f, 1.0f, 0.0f)) *
@@ -163,7 +166,8 @@ void Context::Render()
 		//glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);// 점을 의미
 
     auto projection = glm::perspective(glm::radians(45.0f),
-		(float)m_width/(float)m_height, 0.01f, 30.0f);
+		(float)m_width/(float)m_height, 0.1f, 30.0f);
+		//(float)m_width/(float)m_height, 0.01f, 1000.0f);
 
 	auto view = glm::lookAt(m_cameraPos,
 		m_cameraPos + m_cameraFront, m_cameraUp);
