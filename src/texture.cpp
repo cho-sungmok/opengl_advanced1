@@ -8,7 +8,7 @@ TextureUPtr Texture::CreateFromImage(const Image* image) {
 }
 
 Texture::~Texture() {
-    if(m_texture)
+    if (m_texture)
         glDeleteTextures(1, &m_texture);
 }
 

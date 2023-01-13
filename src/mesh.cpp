@@ -4,11 +4,11 @@ MeshUPtr Mesh::Create(const std::vector<Vertex>& vertices,
 	const std::vector<uint32_t>& indices, uint32_t primitiveType)
 {
 	auto mesh = MeshUPtr(new Mesh());
-	mesh->init(vertices, indices, primitiveType);
+	mesh->Init(vertices, indices, primitiveType);
 	return std::move(mesh);
 }
 
-void Mesh::init(
+void Mesh::Init(
 	const std::vector<Vertex>& vertices,
 	const std::vector<uint32_t>& indices,
 	 uint32_t primitiveType)
@@ -26,7 +26,7 @@ void Mesh::init(
 void Mesh::Draw(const Program* program) const
 {
 	m_vertexLayout->Bind();
-	if(m_material)
+	if (m_material)
 		m_material->SetToProgram(program);
 	glDrawElements(m_primitiveType, m_indexBuffer->GetCount(), GL_UNSIGNED_INT, 0);
 }
@@ -72,6 +72,21 @@ MeshUPtr Mesh::CreateBox()
 		12, 14, 13, 14, 12, 15,
 		16, 17, 18, 18, 19, 16,
 		20, 22, 21, 22, 20, 23,
+	};
+
+	return Create(vertices, indices, GL_TRIANGLES);
+}
+
+MeshUPtr Mesh::CreatePlane() {
+	std::vector<Vertex> vertices = {
+		Vertex { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3( 0.0f,  0.0f, 1.0f), glm::vec2(0.0f, 0.0f) },
+		Vertex { glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec3( 0.0f,  0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
+		Vertex { glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec3( 0.0f,  0.0f, 1.0f), glm::vec2(1.0f, 1.0f) },
+		Vertex { glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec3( 0.0f,  0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
+	};
+
+	std::vector<uint32_t> indices = {
+		0,  1,  2,  2,  3,  0,
 	};
 
 	return Create(vertices, indices, GL_TRIANGLES);
