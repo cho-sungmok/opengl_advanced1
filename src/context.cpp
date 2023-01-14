@@ -15,6 +15,8 @@ void Context::Reshape(int width, int height)
 	m_width = width;
 	m_height = height;
 	glViewport(0, 0, m_width, m_height);
+
+	m_framebuffer = Framebuffer::Create(Texture::Create(width, height, GL_RGBA));
 }
 
 void Context::ProcessInput(GLFWwindow* window)
@@ -94,6 +96,10 @@ bool Context::Init()
 	if (!m_textureProgram)
 		return false;
 
+	m_postProgram = Program::Create("./shader/texture.vs", "./shader/gamma.fs");// invert.fs
+	if (!m_postProgram)
+		return false;
+
 	glClearColor(0.1f, 0.2f, 0.3f, 0.0f);
 
 	TexturePtr darkGrayTexture = Texture::CreateFromImage(
@@ -120,7 +126,23 @@ bool Context::Init()
 	m_plane = Mesh::CreatePlane();
 	m_windowTexture = Texture::CreateFromImage(
 		Image::Load("./image/blending_transparent_window.png").get());
-	
+		
+	auto cubeRight = Image::Load("./image/skybox/right.jpg", false);
+	auto cubeLeft = Image::Load("./image/skybox/left.jpg", false);
+	auto cubeTop = Image::Load("./image/skybox/top.jpg", false);
+	auto cubeBottom = Image::Load("./image/skybox/bottom.jpg", false);
+	auto cubeFront = Image::Load("./image/skybox/front.jpg", false);
+	auto cubeBack = Image::Load("./image/skybox/back.jpg", false);
+	m_cubeTexture = CubeTexture::CreateFromImages({
+		cubeRight.get(),
+		cubeLeft.get(), 
+		cubeTop.get(), 
+		cubeBottom.get(), 
+		cubeFront.get(), 
+		cubeBack.get()
+	});
+	m_skyboxProgram = Program::Create("./shader/skybox.vs", "./shader/skybox.fs");
+
 	return true;
 }
 
@@ -130,6 +152,7 @@ void Context::Render()
 		if (ImGui::ColorEdit4("clear color", glm::value_ptr(m_clearColor))) {
 			glClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
 		}
+		ImGui::DragFloat("gamma", &m_gamma, 0.01f, 0.0f, 2.0f);
 		ImGui::Separator();
 		ImGui::DragFloat3("camera pos", glm::value_ptr(m_cameraPos), 0.01f);
 		ImGui::DragFloat("camera yaw", &m_cameraYaw, 0.5f);
@@ -152,8 +175,13 @@ void Context::Render()
 		}
 
 		ImGui::Checkbox("animation", &m_animation);
+
+		float aspectRatio = (float)m_width / (float)m_width;
+		ImGui::Image((ImTextureID)m_framebuffer->GetColorAttachment()->Get(), ImVec2(150 * aspectRatio, 150));
 	}
 	ImGui::End();
+
+	m_framebuffer->Bind();// ================================================
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
@@ -168,11 +196,19 @@ void Context::Render()
 		//glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);// 점을 의미
 
     auto projection = glm::perspective(glm::radians(45.0f),
-		(float)m_width/(float)m_height, 0.1f, 30.0f);
-		//(float)m_width/(float)m_height, 0.01f, 1000.0f);
-
+		//(float)m_width/(float)m_height, 0.1f, 30.0f);
+		(float)m_width/(float)m_height, 0.1f, 100.0f);
 	auto view = glm::lookAt(m_cameraPos,
 		m_cameraPos + m_cameraFront, m_cameraUp);
+
+	auto skyboxModelTransform = 
+		glm::translate(glm::mat4(1.0f), m_cameraPos) *
+		glm::scale(glm::mat4(1.0f), glm::vec3(50.0f));
+	m_skyboxProgram->Use();
+	m_cubeTexture->Bind();
+	m_skyboxProgram->SetUniform("skybox", 0);
+	m_skyboxProgram->SetUniform("transform", projection * view * skyboxModelTransform);
+	m_box->Draw(m_skyboxProgram.get());
 
 	glm::vec3 lightPos = m_light.position;
 	glm::vec3 lightDir = m_light.direction;
@@ -263,8 +299,10 @@ void Context::Render()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+#if 0////////////////////////////////////////////////////// cube map 사용시 이거 쓰면 안된다.
 	glEnable(GL_CULL_FACE);	// glDisable(GL_CULL_FACE); default
 	glCullFace(GL_BACK);	// GL_FRONT / GL_BACK (default)
+#endif//////////////////////////////////////////////////////
 
 	m_textureProgram->Use();
 	m_windowTexture->Bind();
@@ -287,6 +325,17 @@ void Context::Render()
 	transform = projection * view * modelTransform;
 	m_textureProgram->SetUniform("transform", transform);
 	m_plane->Draw(m_textureProgram.get());
+
+	Framebuffer::BindToDefault();// ================================================
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+	m_postProgram->Use();
+	m_postProgram->SetUniform("transform", glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f)));
+	m_postProgram->SetUniform("gamma", m_gamma);
+	m_framebuffer->GetColorAttachment()->Bind();
+	m_postProgram->SetUniform("tex", 0);
+	m_plane->Draw(m_postProgram.get());
 }
 
 #include <iostream>
