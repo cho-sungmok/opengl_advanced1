@@ -19,8 +19,8 @@ ExternalProject_Add(
     )
 # Dependency 리스트 및 라이브러리 파일 리스트 추가
 set(DEP_LIST ${DEP_LIST} dep_spdlog)
-set(DEP_LIBS ${DEP_LIBS} spdlog$<$<CONFIG:Debug>:d>)    # for windows
-#set(DEP_LIBS ${DEP_LIBS} spdlog)                       # for mac | ubuntu
+#set(DEP_LIBS ${DEP_LIBS} spdlog$<$<CONFIG:Debug>:d>)    # for windows
+set(DEP_LIBS ${DEP_LIBS} spdlog)                       # for mac | ubuntu
 
 # glfw
 ExternalProject_Add(
@@ -124,11 +124,11 @@ ExternalProject_Add(
     )
 set(DEP_LIST ${DEP_LIST} dep_assimp)
 set(DEP_LIBS ${DEP_LIBS}
-    assimp-vc143-mt$<$<CONFIG:Debug>:d>     # for windows
-    zlibstatic$<$<CONFIG:Debug>:d>
-    IrrXML$<$<CONFIG:Debug>:d>
-#    assimp-vc143-mt                         # for mac | ubuntu
-#    zlibstatic
-#    IrrXML
+#    assimp-vc143-mt$<$<CONFIG:Debug>:d>     # for windows
+#    zlibstatic$<$<CONFIG:Debug>:d>
+#    IrrXML$<$<CONFIG:Debug>:d>
+    assimp                         # for mac | ubuntu
+    zlibstatic
+    IrrXML
     )
 

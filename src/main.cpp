@@ -108,7 +108,13 @@ int main(int argc, const char** argv)
     }
 	glfwSetWindowUserPointer(window, context.get());
 
-    OnFramebufferSizeChnage(window, WINDOW_WIDTH, WINDOW_HEIGHT);
+#if (OS==OS_MAC)
+	int width, height;// retina display
+	glfwGetFramebufferSize(window, &width, &height);// glfwGetWindowFrameSize(window, t, l, r, b)
+    OnFramebufferSizeChnage(window, width, height);
+#else
+	OnFramebufferSizeChnage(window, WINDOW_WIDTH, WINDOW_HEIGHT);
+#endif
     glfwSetFramebufferSizeCallback(window, OnFramebufferSizeChnage);
     glfwSetKeyCallback(window, OnKeyEvent);
     glfwSetCharCallback(window, OnCharEvent);
