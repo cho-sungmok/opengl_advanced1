@@ -9,7 +9,7 @@ public:
 	static void BindToDefault();
 	~Framebuffer();
 
-	const uint32_t Get() const {  }
+	const uint32_t Get() const { return m_framebuffer; }
 	void Bind() const;
 	const TexturePtr GetColorAttachment() const { return m_colorAttachment; }
 

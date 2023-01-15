@@ -27,11 +27,19 @@ bool Framebuffer::InitWithColorAttachment(const TexturePtr colorAttachment) {
 	glGenFramebuffers(1, &m_framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 
+#if FBO_MSAA
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment->Get(), 0);
+#else
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment->Get(), 0);
+#endif
 
 	glGenRenderbuffers(1, &m_depthStencilBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthStencilBuffer);
+#if FBO_MSAA
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, colorAttachment->GetWidth(), colorAttachment->GetHeight());
+#else
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, colorAttachment->GetWidth(), colorAttachment->GetHeight());
+#endif
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencilBuffer);

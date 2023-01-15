@@ -1,5 +1,13 @@
 #include "texture.h"
 
+#if FBO_MSAA
+TextureUPtr Texture::CreateMSAA(int width, int height, uint32_t format) {
+    auto texture = TextureUPtr(new Texture());
+    texture->CreateTextureMSAA(width, height, format);
+    return std::move(texture);
+}
+#endif
+
 TextureUPtr Texture::Create(int width, int height, uint32_t format) {
     auto texture = TextureUPtr(new Texture());
     texture->CreateTexture();
@@ -45,6 +53,35 @@ void Texture::CreateTexture() {
 #endif
     setWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
+
+#if FBO_MSAA
+void Texture::CreateTextureMSAA(int width, int height, uint32_t format)
+{
+    //
+    //texture->CreateTexture();
+    //
+    glGenTextures(1, &m_texture);
+    //Bind();
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_texture);
+#if 0
+    //SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//GL_LINEAR_MIPMAP_LINEAR
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //setWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
+    //
+    //texture->SetTextureFormat(width, height, format);
+    //
+    m_width = width;
+    m_height = height;
+    m_format = format;
+
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, m_format, m_width, m_height, GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+}
+#endif
 
 void Texture::SetTextureFormat(int width, int height, uint32_t format) {
     m_width = width;

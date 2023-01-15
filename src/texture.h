@@ -2,9 +2,17 @@
 
 #include "image.h"
 
+#define FBO_MSAA 0
+
 CLASS_PTR(Texture)
 class Texture {
 public:
+
+#if FBO_MSAA
+    static TextureUPtr CreateMSAA(int width, int height, uint32_t format);
+    void CreateTextureMSAA(int width, int height, uint32_t format);
+#endif
+
     static TextureUPtr Create(int width, int height, uint32_t format);
     static TextureUPtr CreateFromImage(const Image* image);
     ~Texture();

@@ -72,6 +72,8 @@ int main(int argc, const char** argv)
 #if (OS==OS_MAC)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+    glfwWindowHint(GLFW_SAMPLES, 4);// MSAA(Mutisample Anti-Aliasing)
+    //glEnable(GL_MULTISAMPLE);// MSAA(Mutisample Anti-Aliasing) : Context::Init()
 
     SPDLOG_INFO("Create glfw window");
     auto window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME, nullptr, nullptr);

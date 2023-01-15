@@ -40,7 +40,7 @@ public:
 
 	const VertexLayout* GetVertexLayout() const { return m_vertexLayout.get(); }
 	BufferPtr GetVertexBuffer() const { return m_vertexBuffer; }
-	BufferPtr GetIndexBuffer() const { m_indexBuffer; }
+	BufferPtr GetIndexBuffer() const { return m_indexBuffer; }
 
 	void SetMaterial(MaterialPtr material) { m_material = material; }
 	MaterialPtr GetMaterial() const { return m_material; }

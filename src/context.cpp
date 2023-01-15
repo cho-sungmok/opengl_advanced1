@@ -16,7 +16,11 @@ void Context::Reshape(int width, int height)
 	m_height = height;
 	glViewport(0, 0, m_width, m_height);
 
+#if FBO_MSAA
+	m_framebuffer = Framebuffer::Create(Texture::CreateMSAA(width, height, GL_RGBA));
+#else
 	m_framebuffer = Framebuffer::Create(Texture::Create(width, height, GL_RGBA));
+#endif
 }
 
 void Context::ProcessInput(GLFWwindow* window)
@@ -82,6 +86,9 @@ void Context::MouseButton(int button, int action, double x, double y)
 
 bool Context::Init()
 {
+    //glfwWindowHint(GLFW_SAMPLES, 4);// MSAA(Mutisample Anti-Aliasing) : main
+	glEnable(GL_MULTISAMPLE);
+
 	m_box = Mesh::CreateBox();
 
 	m_simpleProgram = Program::Create("./shader/simple.vs", "./shader/simple.fs");
@@ -142,6 +149,31 @@ bool Context::Init()
 		cubeBack.get()
 	});
 	m_skyboxProgram = Program::Create("./shader/skybox.vs", "./shader/skybox.fs");
+	m_envMapProgram = Program::Create("./shader/env_map.vs", "./shader/env_map.fs");
+
+	m_grassTexture = Texture::CreateFromImage(Image::Load("./image/grass.png").get());
+	m_grassProgram = Program::Create("./shader/grass.vs", "./shader/grass.fs");
+	m_grassPos.resize(10000);
+	for(size_t i=0; i<m_grassPos.size(); i++) {
+		m_grassPos[i].x = ((float)rand() / (float)RAND_MAX * 2.0f - 1.0f) * 5.0f;
+		m_grassPos[i].z = ((float)rand() / (float)RAND_MAX * 2.0f - 1.0f) * 5.0f;
+		m_grassPos[i].y = glm::radians((float)rand() / (float)RAND_MAX * 360.0f);
+	}
+#if INSTANCING
+	m_grassInstance = VertexLayout::Create();
+	m_grassInstance->Bind();
+	m_plane->GetVertexBuffer()->Bind();
+	m_grassInstance->SetAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	m_grassInstance->SetAttrib(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, normal));
+	m_grassInstance->SetAttrib(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, texCoord));
+	 
+	m_grassPosBuffer = Buffer::CreateWithData(GL_ARRAY_BUFFER, GL_STATIC_DRAW,
+	    m_grassPos.data(), sizeof(glm::vec3), m_grassPos.size());
+	m_grassPosBuffer->Bind();
+	m_grassInstance->SetAttrib(3, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+	glVertexAttribDivisor(3, 1);
+	m_plane->GetIndexBuffer()->Bind();
+#endif
 
 	return true;
 }
@@ -295,6 +327,18 @@ void Context::Render()
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);
 	glStencilMask(0xFF);
 #endif
+	modelTransform =
+		glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.75f, -2.0f)) *
+		glm::rotate(glm::mat4(1.0f), glm::radians(40.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+		glm::scale(glm::mat4(1.0f), glm::vec3(1.5f, 1.5f, 1.5f));
+	m_envMapProgram->Use();
+	m_envMapProgram->SetUniform("model", modelTransform);
+	m_envMapProgram->SetUniform("view", view);
+	m_envMapProgram->SetUniform("projection", projection);
+	m_envMapProgram->SetUniform("cameraPos", m_cameraPos);
+	m_cubeTexture->Bind();
+	m_envMapProgram->SetUniform("skybox", 0);
+	m_box->Draw(m_envMapProgram.get());
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -325,6 +369,27 @@ void Context::Render()
 	transform = projection * view * modelTransform;
 	m_textureProgram->SetUniform("transform", transform);
 	m_plane->Draw(m_textureProgram.get());
+
+	m_grassProgram->Use();
+	m_grassProgram->SetUniform("tex", 0);
+	m_grassTexture->Bind();
+#if (INSTANCING==0)
+	for (size_t i = 0; i < m_grassPos.size(); i++) {
+		modelTransform = 
+			glm::translate(glm::mat4(1.0f), glm::vec3(m_grassPos[i].x, 0.5f, m_grassPos[i].z)) *
+			glm::rotate(glm::mat4(1.0f), m_grassPos[i].y, glm::vec3(0.0f, 1.0f, 0.0f));
+		transform = projection * view * modelTransform;
+		m_grassProgram->SetUniform("transform", transform);
+		m_plane->Draw(m_grassProgram.get());
+	}
+#else
+	m_grassInstance->Bind();
+	modelTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+	transform = projection * view * modelTransform;
+	m_grassProgram->SetUniform("transform", transform);
+	glDrawElementsInstanced(GL_TRIANGLES, m_plane->GetIndexBuffer()->GetCount(),
+	GL_UNSIGNED_INT, 0, m_grassPosBuffer->GetCount());
+#endif
 
 	Framebuffer::BindToDefault();// ================================================
 

@@ -86,14 +86,14 @@ include(Dependency.cmake)
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
 # for windows
-#target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
 # for mac
-target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS}
-    "-framework OpenGL"
-    "-framework Cocoa"
-    "-framework IOKit"
-    "-framework CoreVideo"
-    )
+#target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS}
+#    "-framework OpenGL"
+#    "-framework Cocoa"
+#    "-framework IOKit"
+#    "-framework CoreVideo"
+#    )
 # for ubuntu
 #target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS} X11)
 
@@ -104,8 +104,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     OS_WINDOW=${OS_WINDOW}
     OS_MAC=${OS_MAC}
     OS_UBUNTU=${OS_UBUNTU}
-#    OS=${OS_WINDOW}
-    OS=${OS_MAC}
+    OS=${OS_WINDOW}
+#    OS=${OS_MAC}
 #    OS=${OS_UBUNTU}
     )
 

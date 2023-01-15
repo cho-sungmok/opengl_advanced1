@@ -10,6 +10,8 @@
 #include "model.h"
 #include "framebuffer.h"
 
+#define INSTANCING 1
+
 CLASS_PTR(Context)
 class Context {
 public:
@@ -65,6 +67,15 @@ private:
 	
 	CubeTextureUPtr m_cubeTexture;
 	ProgramUPtr m_skyboxProgram;
+	ProgramUPtr m_envMapProgram;
+
+	TexturePtr m_grassTexture;
+	ProgramUPtr m_grassProgram;
+	std::vector<glm::vec3> m_grassPos;
+#if INSTANCING
+	BufferUPtr m_grassPosBuffer;
+	VertexLayoutUPtr m_grassInstance;
+#endif
 
 	int m_width { WINDOW_WIDTH };
 	int m_height { WINDOW_HEIGHT };
